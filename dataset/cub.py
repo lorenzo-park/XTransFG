@@ -26,7 +26,8 @@ class CUB200(datasets.VisionDataset):
       img = self.transform(img)
     if self.target_transform is not None and target is not None:
       target = self.target_transform(target)
-    return img, txt, target
+    # return img, txt, target
+    return img, target
 
   def __len__(self) -> int:
     return len(self.data)
@@ -48,7 +49,7 @@ class CUB200(datasets.VisionDataset):
       _, label = label.strip().split()
 
       if int(split) == int(train):
-        data_list.append((os.path.join(root, "CUB_200_2011/images", line), label))
+        data_list.append((os.path.join(root, "CUB_200_2011/images", line), int(label)))
 
     return data_list
 
