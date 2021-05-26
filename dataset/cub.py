@@ -2,7 +2,7 @@ from typing import Optional, Callable, Tuple, Any, List
 from torchvision.datasets.folder import default_loader
 
 import os
-import torch
+# import torch
 import numpy as np
 import torchvision.datasets as datasets
 
@@ -21,7 +21,7 @@ class CUB200(datasets.VisionDataset):
   def __getitem__(self, index: int) -> Any:
     path, target = self.data[index]
     img = self.loader(path)
-    txt = torch.load(path.replace(".jpg", ".txt.pt"))
+    # txt = torch.load(path.replace(".jpg", ".txt.pt"))
     if self.transform is not None:
       img = self.transform(img)
     if self.target_transform is not None and target is not None:
@@ -49,7 +49,7 @@ class CUB200(datasets.VisionDataset):
       _, label = label.strip().split()
 
       if int(split) == int(train):
-        data_list.append((os.path.join(root, "CUB_200_2011/images", line), int(label)))
+        data_list.append((os.path.join(root, "CUB_200_2011/images", line), int(label)-1))
 
     return data_list
 
