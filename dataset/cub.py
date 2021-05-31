@@ -8,26 +8,28 @@ import torchvision.datasets as datasets
 
 
 class CUB200(datasets.VisionDataset):
-  def __init__(self, root: str, train: bool = True, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None):
+  def __init__(self, root: str, train: bool = True, caption: bool = False, transform: Optional[Callable] = None, target_transform: Optional[Callable] = None):
     super().__init__(root, transform=transform, target_transform=target_transform)
     self.class_idx = self.get_class_idx(root)
     self.classes = list(self.class_idx.keys())
     self.data = self.parse_data_file(root, train)
-    np.ones(len(self.data) - int())
-    np.zeros(int(len(self.data) * 0.))
+    self.caption = caption
 
     self.loader = default_loader
 
   def __getitem__(self, index: int) -> Any:
     path, target = self.data[index]
     img = self.loader(path)
-    # txt = torch.load(path.replace(".jpg", ".txt.pt"))
     if self.transform is not None:
       img = self.transform(img)
     if self.target_transform is not None and target is not None:
       target = self.target_transform(target)
-    # return img, txt, target
-    return img, target
+
+    if self.caption:
+      txt = np.load(path.replace(".jpg", ".txt.npy"))
+      return img, txt, target
+    else:
+      return img, target
 
   def __len__(self) -> int:
     return len(self.data)

@@ -4,3 +4,4 @@ data/
 pretrained/
 transformers/
 output/
+wandb/
