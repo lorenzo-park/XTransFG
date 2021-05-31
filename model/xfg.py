@@ -171,7 +171,10 @@ class XFGConcat(nn.Module):
 
         self.pos_embedding = TrainablePositionalEncoding(80+325, config.hidden_size, dropout=config.dropout)
 
-        self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+        if config.transformer.shared_cls:
+            self.cls_token = self.transformer.cls_token
+        else:
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
     def forward(self, img, txt_tokens):
         cls_token = self.cls_token.expand(img.shape[0], -1, -1)
