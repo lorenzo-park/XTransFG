@@ -13,7 +13,6 @@ config = DictConfig({
         "mlp_dim": 3072,
         "num_heads": 12,
         "num_layers": 12,
-        "num_layers_cross": 12,
         "attention_dropout_rate": 0.0,
     },
     "num_classes": 200,

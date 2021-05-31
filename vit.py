@@ -1,12 +1,9 @@
-from torchvision import transforms
-from torchvision.transforms.functional import InterpolationMode
-
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 
+from pl_model.vit import LitViT
 import pytorch_lightning as pl
 
-from pl_model.xfg import LitXFGCrossAttn
-from xfg_cross_config import config
+from vit_config import config
 
 
 if config.logger:
@@ -42,6 +39,6 @@ trainer = pl.Trainer(
     accelerator='ddp',
 )
 
-model = LitXFGCrossAttn(config)
+model = LitViT(config)
 trainer.fit(model)
 trainer.test()

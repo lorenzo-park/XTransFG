@@ -82,12 +82,15 @@ class LitViT(pl.LightningModule):
         self.log("test_acc_epoch", test_acc, logger=True, sync_dist=True)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
-        scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
-        return (
-            [optimizer],
-            [scheduler]
-        )
+        if self.config.warmup:
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
+            scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
+            return (
+                [optimizer],
+                [scheduler]
+            )
+        else:
+            return torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.config.batch_size,
