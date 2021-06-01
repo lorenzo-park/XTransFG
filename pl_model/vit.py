@@ -119,5 +119,5 @@ class LitViT(pl.LightningModule):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-        self.train_set = CUB200(root="./data", train=True, transform=train_transform)
-        self.test_set = CUB200(root="./data", train=False, transform=test_transform)
+        self.train_set = CUB200(root=self.config.root, train=True, transform=train_transform)
+        self.test_set = CUB200(root=self.config.root, train=False, transform=test_transform)

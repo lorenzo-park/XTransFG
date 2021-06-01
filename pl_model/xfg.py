@@ -119,8 +119,8 @@ class LitXFGConcat(pl.LightningModule):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-        self.train_set = CUB200(root="./data", train=True, caption=True, transform=train_transform)
-        self.test_set = CUB200(root="./data", train=False, caption=True, transform=test_transform)
+        self.train_set = CUB200(root=self.config.root, train=True, caption=True, transform=train_transform)
+        self.test_set = CUB200(root=self.config.root, train=False, caption=True, transform=test_transform)
 
 
 class LitXFGCrossAttn(pl.LightningModule):
@@ -226,5 +226,5 @@ class LitXFGCrossAttn(pl.LightningModule):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-        self.train_set = CUB200(root="./data", train=True, caption=True, transform=train_transform)
-        self.test_set = CUB200(root="./data", train=False, caption=True, transform=test_transform)
+        self.train_set = CUB200(root=self.config.root, train=True, caption=True, transform=train_transform)
+        self.test_set = CUB200(root=self.config.root, train=False, caption=True, transform=test_transform)

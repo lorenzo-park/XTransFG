@@ -1,7 +1,5 @@
 defaults:
-  - conf/${model}
-
-model: vit
+  - model: vit
 
 patch_size: 32
 split: overlap
@@ -25,4 +23,6 @@ epoch: 10000
 gpus: 2
 logger: True
 patience: 50
-pretrained_dir: ./pretrained/vit/imagenet21k_ViT-B_32.npz
+pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
+root: "/home/lorenzo/xfg/data"
+warmup: false
