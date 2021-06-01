@@ -31,7 +31,7 @@ class LitViT(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
 
-        outputs = self.model(inputs)
+        outputs, _ = self.model(inputs)
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         train_acc = self.train_accuracy(torch.argmax(outputs, dim=-1), targets)
 
@@ -48,7 +48,7 @@ class LitViT(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
 
-        outputs = self.model(inputs)
+        outputs, _ = self.model(inputs)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -65,7 +65,7 @@ class LitViT(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         inputs, targets = batch
-        outputs = self.model(inputs)
+        outputs, attn_weights = self.model(inputs)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         test_acc = self.test_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -101,7 +101,7 @@ class LitViT(pl.LightningModule):
                         pin_memory=True, num_workers=self.config.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, batch_size=self.config.batch_size,
+        return DataLoader(self.test_set, batch_size=len(self.test_set),
                         pin_memory=True, num_workers=self.config.num_workers)
 
     def init_dataset(self):

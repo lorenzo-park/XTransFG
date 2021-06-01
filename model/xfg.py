@@ -84,10 +84,10 @@ class XFGCrossAttn(nn.Module):
         img_tokens = self.img_pos_embedding(img_tokens)
         txt_tokens = self.txt_pos_embedding(txt_tokens)
 
-        img_tokens, _ = self.cross_layers(img_tokens, txt_tokens, txt_tokens)
+        img_tokens, attn_weights = self.cross_layers(img_tokens, txt_tokens, txt_tokens)
 
         logits = self.head(img_tokens[:, 0])
-        return logits
+        return logits, attn_weights
 
     def load_from(self, weights):
         with torch.no_grad():
@@ -184,10 +184,10 @@ class XFGConcat(nn.Module):
         tokens = self.pos_embedding(tokens) + tokens
         tokens = torch.cat([cls_token, tokens], dim=1)
 
-        tokens, _ = self.encoder(tokens)
+        tokens, attn_weights = self.encoder(tokens)
 
         logits = self.head(tokens[:, 0])
-        return logits
+        return logits, attn_weights
 
     def load_from(self, weights):
         with torch.no_grad():

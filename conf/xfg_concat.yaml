@@ -1,0 +1,5 @@
+# @package _global_
+transformer:
+  num_layers_fusion: 12
+  attention_dropout_rate: 0.0
+  shared_cls: False

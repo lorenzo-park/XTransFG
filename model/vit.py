@@ -249,9 +249,9 @@ class VisionTransformer(nn.Module):
         self.head = nn.Linear(config.hidden_size, num_classes)
 
     def forward(self, x, labels=None):
-        tokens, _ = self.transformer(x)
+        tokens, attn_weights = self.transformer(x)
         logits = self.head(tokens[:, 0])
-        return logits
+        return logits, attn_weights
 
     def load_from(self, weights):
         with torch.no_grad():
