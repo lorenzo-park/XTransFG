@@ -5,6 +5,8 @@ from torch.utils.data import DataLoader
 
 import torch
 import torchmetrics
+import torchvision
+import wandb
 
 import torch.nn.functional as F
 import pytorch_lightning as pl
@@ -28,6 +30,8 @@ class LitViT(pl.LightningModule):
         self.val_accuracy = torchmetrics.Accuracy()
         self.test_accuracy = torchmetrics.Accuracy()
 
+        self.plot = True
+
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
 
@@ -48,7 +52,7 @@ class LitViT(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
 
-        outputs, _ = self.model(inputs)
+        outputs, attn_weights = self.model(inputs)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -56,10 +60,15 @@ class LitViT(pl.LightningModule):
         self.log("val_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
         self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
 
+        if self.plot:
+            images = attn_weights[-1][0].squeeze(0).unsqueeze(1).repeat(1, 3, 1, 1)
+            self.attn_weights = torchvision.utils.make_grid(images)
+            self.plot = False
         return loss
 
-
     def validation_epoch_end(self, outs):
+        self.logger.experiment.log({"attn_weights": [wandb.Image(self.attn_weights)]})
+        self.plot = True
         self.log("val_acc_epoch", self.val_accuracy.compute(),
                 prog_bar=True, logger=True, sync_dist=True)
 
@@ -101,7 +110,7 @@ class LitViT(pl.LightningModule):
                         pin_memory=True, num_workers=self.config.num_workers)
 
     def test_dataloader(self):
-        return DataLoader(self.test_set, batch_size=len(self.test_set),
+        return DataLoader(self.test_set, batch_size=self.config.batch_size,
                         pin_memory=True, num_workers=self.config.num_workers)
 
     def init_dataset(self):

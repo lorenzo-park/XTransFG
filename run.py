@@ -19,7 +19,6 @@ def get_model(config):
 
 @hydra.main(config_name="config")
 def run(config):
-    print(config)
     if config.logger:
         from pytorch_lightning.loggers import WandbLogger
         logger = WandbLogger(

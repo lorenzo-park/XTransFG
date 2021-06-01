@@ -10,7 +10,7 @@ max_len: 100
 classifier: token
 num_classes: 200
 batch_size: 16
-num_workers: 8
+num_workers: 16
 image_size: 448
 transformer:
   mlp_dim: 3072
@@ -21,7 +21,7 @@ seed: 42
 momentum: 0.9
 epoch: 10000
 gpus: 2
-logger: True
+logger: true
 patience: 50
 pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
 root: "/home/lorenzo/xfg/data"
