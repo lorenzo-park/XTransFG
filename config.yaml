@@ -1,5 +1,5 @@
 defaults:
-  - model: vit
+  - model: xfg_cross_backbone
 
 patch_size: 32
 split: overlap
@@ -19,10 +19,10 @@ transformer:
 lr: 1e-2
 seed: 42
 momentum: 0.9
-epoch: 10000
-gpus: 2
+epoch: 100
+gpus: 1
 logger: true
-patience: 50
-pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
-root: "/home/lorenzo/xfg/data"
+patience: 10
+pretrained_dir: /home/lorenzo-lab/project/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
+root: "/home/lorenzo-lab/project/xfg/data"
 warmup: false

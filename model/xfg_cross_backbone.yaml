@@ -1,0 +1,36 @@
+# @package _global_
+model: xfg_cross_backbone
+transformer:
+  mlp_dim: 3072
+  num_heads: 12
+  num_layers: 1
+  attention_dropout_rate: 0.0
+
+pretrained_path: /home/lorenzo-lab/project/xfg/pretrained/vit/vit_cub.pt
+pretrained_config:
+  patch_size: 32
+  split: overlap
+  slide_step: 24
+  hidden_size: 768
+  dropout: 0.1
+  max_len: 100
+  classifier: token
+  num_classes: 200
+  batch_size: 16
+  num_workers: 16
+  image_size: 448
+  transformer:
+    mlp_dim: 3072
+    num_heads: 12
+    num_layers: 12
+    attention_dropout_rate: 0.0
+  lr: 1e-2
+  seed: 42
+  momentum: 0.9
+  epoch: 100
+  gpus: 1
+  logger: true
+  patience: 10
+  pretrained_dir: /home/lorenzo-lab/project/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
+  root: "/home/lorenzo-lab/project/xfg/data"
+  warmup: false

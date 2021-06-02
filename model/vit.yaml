@@ -2,3 +2,4 @@
 model: vit
 transformer:
   attention_dropout_rate: 0.0
+save_path: "/home/lorenzo-lab/project/xfg/pretrained/vit"

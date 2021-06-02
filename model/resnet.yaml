@@ -1,0 +1,4 @@
+# @package _global_
+model: resnet
+
+save_path: "/home/lorenzo-lab/project/xfg/pretrained/resnet"

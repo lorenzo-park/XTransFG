@@ -5,7 +5,11 @@ import hydra
 import pytorch_lightning as pl
 
 from pl_model.vit import LitViT
-from pl_model.xfg import LitXFGConcat, LitXFGCrossAttn
+from pl_model.xfg_concat import LitXFGConcat
+from pl_model.xfg_cross import LitXFGCrossAttn
+from pl_model.xfg_concat_backbone import LitXFGConcatWithBackbone
+from pl_model.xfg_cross_backbone import LitXFGCrossWithBackbone
+from pl_model.resnet import LitResNet
 
 
 def get_model(config):
@@ -15,6 +19,12 @@ def get_model(config):
         return LitXFGCrossAttn(config)
     elif config.model == "xfg_concat":
         return LitXFGConcat(config)
+    elif config.model == "xfg_cross_backbone":
+        return LitXFGCrossWithBackbone(config)
+    elif config.model == "xfg_concat_backbone":
+        return LitXFGConcatWithBackbone(config)
+    elif config.model == "resnet":
+        return LitResNet(config)
 
 
 @hydra.main(config_name="config")
@@ -34,25 +44,36 @@ def run(config):
     pl.seed_everything(config.seed)
 
     early_stop_callback = EarlyStopping(
-        monitor='val_loss',
+        monitor='val_acc_epoch',
         min_delta=0.00,
         patience=config.patience,
         verbose=False,
-        mode='min'
+        mode='max'
     )
-
-    trainer = pl.Trainer(
-        callbacks=[early_stop_callback],
-        precision=16,
-        deterministic=True,
-        check_val_every_n_epoch=1,
-        gpus=config.gpus,
-        logger=logger,
-        max_epochs=config.epoch,
-        weights_summary="top",
-        accelerator='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
-    )
+    if config.gpus > 1:
+        trainer = pl.Trainer(
+            callbacks=[early_stop_callback],
+            precision=16,
+            deterministic=True,
+            check_val_every_n_epoch=1,
+            gpus=config.gpus,
+            logger=logger,
+            max_epochs=config.epoch,
+            weights_summary="top",
+            accelerator='ddp',
+            plugins=DDPPlugin(find_unused_parameters=False),
+        )
+    else:
+        trainer = pl.Trainer(
+            callbacks=[early_stop_callback],
+            precision=16,
+            deterministic=True,
+            check_val_every_n_epoch=1,
+            gpus=config.gpus,
+            logger=logger,
+            max_epochs=config.epoch,
+            weights_summary="top",
+        )
 
     model = get_model(config)
     trainer.fit(model)

@@ -1,28 +1,23 @@
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from PIL import Image
 from torch.utils.data import DataLoader
 
 import os
 import torch
 import torchmetrics
-import torchvision
-import wandb
-
 import torch.nn.functional as F
 import pytorch_lightning as pl
-import numpy as np
 
 from dataset.cub import CUB200
-from model.vit import VisionTransformer
-from util import WarmupLinearSchedule
+from model.resnet import ResNet
 
 
-class LitViT(pl.LightningModule):
+class LitResNet(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = VisionTransformer(config)
-        self.model.load_from(np.load(config.pretrained_dir))
+        model = ResNet(classes=config.num_classes, pretrained=True)
+        self.feature_extractor = model.feature_extractor
+        self.classifier = model.classifier
         self.config = config
 
         self.init_dataset()
@@ -31,13 +26,11 @@ class LitViT(pl.LightningModule):
         self.val_accuracy = torchmetrics.Accuracy()
         self.test_accuracy = torchmetrics.Accuracy()
 
-        self.plot = True
-
     def training_step(self, batch, batch_idx):
         inputs, targets = batch
 
-        outputs, _ = self.model(inputs)
-        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
+        outputs = self.classifier(self.feature_extractor(inputs))
+        loss = F.cross_entropy(outputs, targets)
         train_acc = self.train_accuracy(torch.argmax(outputs, dim=-1), targets)
 
         self.log("train_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
@@ -53,31 +46,26 @@ class LitViT(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         inputs, targets = batch
 
-        outputs, attn_weights = self.model(inputs)
+        outputs = self.classifier(self.feature_extractor(inputs))
 
-        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
+        loss = F.cross_entropy(outputs, targets)
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
 
         self.log("val_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
         self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
 
-        if self.plot:
-            images = attn_weights[-1][0].squeeze(0).unsqueeze(1).repeat(1, 3, 1, 1)
-            self.attn_weights = torchvision.utils.make_grid(images)
-            self.plot = False
         return loss
 
+
     def validation_epoch_end(self, outs):
-        self.logger.experiment.log({"attn_weights": [wandb.Image(self.attn_weights)]})
-        self.plot = True
         self.log("val_acc_epoch", self.val_accuracy.compute(),
                 prog_bar=True, logger=True, sync_dist=True)
 
     def test_step(self, batch, batch_idx):
         inputs, targets = batch
-        outputs, attn_weights = self.model(inputs)
+        outputs = self.classifier(self.feature_extractor(inputs))
 
-        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
+        loss = F.cross_entropy(outputs, targets)
         test_acc = self.test_accuracy(torch.argmax(outputs, dim=-1), targets)
 
         self.log("test_acc", test_acc, on_step=False, on_epoch=True, logger=True,
@@ -91,18 +79,16 @@ class LitViT(pl.LightningModule):
         test_acc = self.test_accuracy.compute()
         self.log("test_acc_epoch", test_acc, logger=True, sync_dist=True)
 
-        torch.save(self.model.state_dict(), os.path.join(self.config.save_path, "vit_cub.pt"))
+        torch.save(self.feature_extractor.state_dict(), os.path.join(self.config.save_path, "resnet_cub_feature_extractor.pt"))
+        torch.save(self.classifier.state_dict(), os.path.join(self.config.save_path, "resnet_cub_classifier.pt"))
 
     def configure_optimizers(self):
-        if self.config.warmup:
-            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
-            scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
-            return (
-                [optimizer],
-                [scheduler]
-            )
-        else:
-            return torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
+        model_params = [
+            {"params": self.feature_extractor.parameters()},
+            {"params": self.classifier.parameters()}
+        ]
+        optimizer = torch.optim.SGD(model_params, lr=self.config.lr, momentum=self.config.momentum)
+        return optimizer
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.config.batch_size,

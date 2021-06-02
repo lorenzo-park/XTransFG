@@ -1,9 +1,8 @@
+from model.vit import VisionTransformer
 from torchvision import transforms
 from torchvision.transforms.functional import InterpolationMode
-from PIL import Image
 from torch.utils.data import DataLoader
 
-import os
 import torch
 import torchmetrics
 import torchvision
@@ -14,15 +13,20 @@ import pytorch_lightning as pl
 import numpy as np
 
 from dataset.cub import CUB200
+from model.xfg import XFGConcatWithBackbone
 from model.vit import VisionTransformer
 from util import WarmupLinearSchedule
 
 
-class LitViT(pl.LightningModule):
+class LitXFGConcatWithBackbone(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = VisionTransformer(config)
-        self.model.load_from(np.load(config.pretrained_dir))
+        vit = VisionTransformer(config.pretrained_config)
+        vit.load_state_dict(torch.load(config.pretrained_path))
+        self.vit_transformer = vit.transformer
+        self.vit_transformer.eval()
+
+        self.model = XFGConcatWithBackbone(config)
         self.config = config
 
         self.init_dataset()
@@ -33,10 +37,11 @@ class LitViT(pl.LightningModule):
 
         self.plot = True
 
-    def training_step(self, batch, batch_idx):
-        inputs, targets = batch
+    def training_step(self, batch, _):
+        inputs, txt, targets = batch
 
-        outputs, _ = self.model(inputs)
+        image_tokens, _  = self.vit_transformer(inputs)
+        outputs, _ = self.model(image_tokens, txt.squeeze(1))
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         train_acc = self.train_accuracy(torch.argmax(outputs, dim=-1), targets)
 
@@ -51,9 +56,9 @@ class LitViT(pl.LightningModule):
                 prog_bar=True, logger=True, sync_dist=True)
 
     def validation_step(self, batch, batch_idx):
-        inputs, targets = batch
-
-        outputs, attn_weights = self.model(inputs)
+        inputs, txt, targets = batch
+        image_tokens, _  = self.vit_transformer(inputs)
+        outputs, attn_weights = self.model(image_tokens, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -74,8 +79,9 @@ class LitViT(pl.LightningModule):
                 prog_bar=True, logger=True, sync_dist=True)
 
     def test_step(self, batch, batch_idx):
-        inputs, targets = batch
-        outputs, attn_weights = self.model(inputs)
+        inputs, txt, targets = batch
+        image_tokens, _  = self.vit_transformer(inputs)
+        outputs, attn_weights = self.model(image_tokens, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         test_acc = self.test_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -90,8 +96,6 @@ class LitViT(pl.LightningModule):
     def test_epoch_end(self, outs):
         test_acc = self.test_accuracy.compute()
         self.log("test_acc_epoch", test_acc, logger=True, sync_dist=True)
-
-        torch.save(self.model.state_dict(), os.path.join(self.config.save_path, "vit_cub.pt"))
 
     def configure_optimizers(self):
         if self.config.warmup:
@@ -131,5 +135,5 @@ class LitViT(pl.LightningModule):
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
 
-        self.train_set = CUB200(root=self.config.root, train=True, transform=train_transform)
-        self.test_set = CUB200(root=self.config.root, train=False, transform=test_transform)
+        self.train_set = CUB200(root=self.config.root, train=True, caption=True, transform=train_transform)
+        self.test_set = CUB200(root=self.config.root, train=False, caption=True, transform=test_transform)
