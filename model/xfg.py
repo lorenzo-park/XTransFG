@@ -65,7 +65,11 @@ class XFGCrossAttn(nn.Module):
 
         self.dropout = nn.Dropout(config.dropout)
 
-        self.cross_layers = XBlock(config)
+
+        self.cross_layers = nn.ModuleList()
+        for _ in range(config.transformer.num_layers_fusion):
+            layer = XBlock(config)
+            self.cross_layers.append(copy.deepcopy(layer))
 
         self.transformer = Transformer(config)
         self.txt_token_proj = nn.Linear(80, 325)
@@ -84,9 +88,11 @@ class XFGCrossAttn(nn.Module):
         img_tokens = self.img_pos_embedding(img_tokens)
         txt_tokens = self.txt_pos_embedding(txt_tokens)
 
-        img_tokens, attn_weights = self.cross_layers(img_tokens, txt_tokens, txt_tokens)
+        h = img_tokens
+        for block in self.cross_layers:
+            h, attn_weights = block(h, txt_tokens, txt_tokens)
 
-        logits = self.head(img_tokens[:, 0])
+        logits = self.head(h[:, 0])
         return logits, attn_weights
 
     def load_from(self, weights):
@@ -171,17 +177,25 @@ class XFGConcat(nn.Module):
 
         self.pos_embedding = TrainablePositionalEncoding(80+325, config.hidden_size, dropout=config.dropout)
 
-        if config.transformer.shared_cls:
-            self.cls_token = self.transformer.embeddings.cls_token
-        else:
+        self.shared_cls = config.transformer.shared_cls
+
+        if not self.shared_cls:
             self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
-    def forward(self, img, txt_tokens):
-        cls_token = self.cls_token.expand(img.shape[0], -1, -1)
 
+    def forward(self, img, txt_tokens):
         img_tokens, _ = self.transformer(img)
+        img_tokens = img_tokens[:, 1:, :]
+        txt_tokens = txt_tokens[:, 1:, :]
+
         tokens = torch.cat([txt_tokens, img_tokens], dim=1)
         tokens = self.pos_embedding(tokens) + tokens
+
+        if not self.shared_cls:
+            cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        else:
+            cls_token = img_tokens[:, 0, :]
+
         tokens = torch.cat([cls_token, tokens], dim=1)
 
         tokens, attn_weights = self.encoder(tokens)
