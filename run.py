@@ -2,6 +2,8 @@ from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.plugins import DDPPlugin
 
 import hydra
+import os
+import torch
 import pytorch_lightning as pl
 
 from pl_model.vit import LitViT
@@ -61,7 +63,7 @@ def run(config):
             max_epochs=config.epoch,
             weights_summary="top",
             accelerator='ddp',
-            plugins=DDPPlugin(find_unused_parameters=False),
+            # plugins=DDPPlugin(find_unused_parameters=False),
         )
     else:
         trainer = pl.Trainer(
@@ -78,6 +80,9 @@ def run(config):
     model = get_model(config)
     trainer.fit(model)
     trainer.test()
+
+    if config.model == "vit":
+        torch.save(model.model.state_dict(), os.path.join(config.save_path, "vit_cub.pt"))
 
 if __name__ == '__main__':
   run()
