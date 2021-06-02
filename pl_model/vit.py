@@ -91,8 +91,6 @@ class LitViT(pl.LightningModule):
         test_acc = self.test_accuracy.compute()
         self.log("test_acc_epoch", test_acc, logger=True, sync_dist=True)
 
-        torch.save(self.model.state_dict(), os.path.join(self.config.save_path, "vit_cub.pt"))
-
     def configure_optimizers(self):
         if self.config.warmup:
             optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
