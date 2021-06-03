@@ -84,7 +84,7 @@ class Encoder(nn.Module):
     def __init__(self, config):
         super(Encoder, self).__init__()
         self.layer = nn.ModuleList()
-        for _ in range(config.transformer.num_layers_encoder):
+        for _ in range(config.transformer.num_layers):
             layer = Block(config)
             self.layer.append(copy.deepcopy(layer))
         self.encoder_norm = nn.LayerNorm(config.hidden_size, eps=1e-6)
@@ -101,7 +101,7 @@ class Decoder(nn.Module):
     def __init__(self, config):
         super(Decoder, self).__init__()
         self.layer = nn.ModuleList()
-        for _ in range(config.transformer.num_layers_decoder):
+        for _ in range(config.transformer.num_layers):
             layer = XBlock(config)
             self.layer.append(copy.deepcopy(layer))
         self.decoder_norm = nn.LayerNorm(config.hidden_size, eps=1e-6)
@@ -156,8 +156,8 @@ class XFGCrossAttn(nn.Module):
 
         self.dropout = nn.Dropout(config.dropout)
 
-        self.encoder = Encoder(config)
-        self.decoder = Decoder(config)
+        self.encoder = Encoder(config.encoder)
+        self.decoder = Decoder(config.decoder)
 
         self.transformer = Transformer(config)
         self.txt_token_proj = nn.Linear(80, 325)
@@ -382,8 +382,8 @@ class XFGCrossAttnWithBackbone(nn.Module):
 
         self.dropout = nn.Dropout(config.dropout)
 
-        self.encoder = Encoder(config)
-        self.decoder = Decoder(config)
+        self.encoder = Encoder(config.encoder)
+        self.decoder = Decoder(config.decoder)
 
         self.txt_token_proj = nn.Linear(80, 325)
         self.head = nn.Linear(config.hidden_size, num_classes)

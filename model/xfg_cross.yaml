@@ -1,6 +1,22 @@
 # @package _global_
 model: xfg_cross
 transformer:
-  num_layers_encoder: 1
-  num_layers_decoder: 1
   attention_dropout_rate: 0.0
+
+encoder:
+  dropout: 0.1
+  hidden_size: 768
+  transformer:
+    mlp_dim: 3072
+    num_heads: 4
+    num_layers: 1
+    attention_dropout_rate: 0.0
+
+decoder:
+  dropout: 0.1
+  hidden_size: 768
+  transformer:
+    mlp_dim: 3072
+    num_heads: 4
+    num_layers: 1
+    attention_dropout_rate: 0.0
