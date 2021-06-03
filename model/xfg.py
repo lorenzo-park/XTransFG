@@ -160,7 +160,7 @@ class XFGCrossAttn(nn.Module):
         self.decoder = Decoder(config.decoder)
 
         self.transformer = Transformer(config)
-        self.txt_token_proj = nn.Linear(80, 325)
+        self.txt_token_proj = nn.Linear(config.max_len, 325)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
         self.img_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
@@ -247,7 +247,6 @@ class EncoderConcat(nn.Module):
         return self.encoder_norm(hidden_states), attn_weights
 
 
-
 class XFGConcat(nn.Module):
     def __init__(self, config, num_classes=200, zero_head=False):
         super(XFGConcat, self).__init__()
@@ -262,7 +261,7 @@ class XFGConcat(nn.Module):
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.pos_embedding = TrainablePositionalEncoding(80+325, config.hidden_size, dropout=config.dropout)
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len+325, config.hidden_size, dropout=config.dropout)
 
         self.shared_cls = config.transformer.shared_cls
 
@@ -353,7 +352,7 @@ class XFGConcatWithBackbone(nn.Module):
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.pos_embedding = TrainablePositionalEncoding(79+324, config.hidden_size, dropout=config.dropout)
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len-1+324, config.hidden_size, dropout=config.dropout)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
@@ -385,7 +384,7 @@ class XFGCrossAttnWithBackbone(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.txt_token_proj = nn.Linear(80, 325)
+        self.txt_token_proj = nn.Linear(config.max_len, 325)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
         self.img_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
