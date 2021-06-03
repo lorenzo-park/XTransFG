@@ -1,9 +1,6 @@
 # @package _global_
 model: xfg_concat_backbone
 transformer:
-  mlp_dim: 3072
-  num_heads: 12
-  num_layers: 1
   num_layers_fusion: 1
   attention_dropout_rate: 0.0
 

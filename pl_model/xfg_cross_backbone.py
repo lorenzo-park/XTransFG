@@ -67,6 +67,7 @@ class LitXFGCrossWithBackbone(pl.LightningModule):
         self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
 
         if self.plot:
+            # print(len(attn_weights), attn_weights[-1].shape)
             images = attn_weights[-1][0].squeeze(0).unsqueeze(1).repeat(1, 3, 1, 1)
             self.attn_weights = torchvision.utils.make_grid(images)
             self.plot = False
