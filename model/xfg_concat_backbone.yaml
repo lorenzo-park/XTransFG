@@ -7,7 +7,7 @@ transformer:
   num_layers_fusion: 1
   attention_dropout_rate: 0.0
 
-pretrained_path: /home/lorenzo-lab/project/xfg/pretrained/vit/vit_cub.pt
+pretrained_path: /home/lorenzo/xfg/pretrained/vit/vit_cub.pt
 pretrained_config:
   patch_size: 32
   split: overlap
@@ -32,6 +32,6 @@ pretrained_config:
   gpus: 1
   logger: true
   patience: 10
-  pretrained_dir: /home/lorenzo-lab/project/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
-  root: "/home/lorenzo-lab/project/xfg/data"
+  pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
+  root: /home/lorenzo/xfg/data
   warmup: false

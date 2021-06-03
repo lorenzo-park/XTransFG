@@ -72,8 +72,7 @@ class LitXFGCrossAttn(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         inputs, txt, targets = batch
-
-        outputs, attn_weights = self.model(inputs)
+        outputs, attn_weights = self.model(inputs, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         test_acc = self.test_accuracy(torch.argmax(outputs, dim=-1), targets)
