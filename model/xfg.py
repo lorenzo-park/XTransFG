@@ -406,3 +406,481 @@ class XFGCrossAttnWithBackbone(nn.Module):
 
         logits = self.head(img_tokens[:, 0])
         return logits, attn_weights
+
+
+class XFGCrossAttnDR(nn.Module):
+    def __init__(self, config, num_classes=200, zero_head=False):
+        super(XFGCrossAttnDR, self).__init__()
+        self.num_classes = num_classes
+        self.zero_head = zero_head
+        self.classifier = config.classifier
+
+        self.dropout = nn.Dropout(config.dropout)
+
+        self.encoder = Encoder(config.encoder)
+        self.decoder = Decoder(config.decoder)
+
+        self.img_token_proj = nn.Linear(325, config.max_len)
+
+        self.transformer = Transformer(config)
+        # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
+        self.head = nn.Linear(config.hidden_size, num_classes)
+
+        self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+
+    def forward(self, img, txt_tokens):
+        img_tokens, _ = self.transformer(img)
+        img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_token_proj(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
+
+        # txt_tokens = txt_tokens.permute(0, 2, 1)
+        # txt_tokens = self.txt_token_proj(txt_tokens)
+        # txt_tokens = txt_tokens.permute(0, 2, 1)
+
+        img_tokens = self.img_pos_embedding(img_tokens)
+        txt_tokens = self.txt_pos_embedding(txt_tokens)
+
+        txt_tokens, _ = self.encoder(txt_tokens)
+        img_tokens, attn_weights = self.decoder(img_tokens, txt_tokens)
+
+        logits = self.head(img_tokens[:, 0])
+        return logits, attn_weights
+
+    def load_from(self, weights):
+        with torch.no_grad():
+            self.transformer.embeddings.patch_embeddings.weight.copy_(np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(np2th(weights["embedding/bias"]))
+            self.transformer.embeddings.cls_token.copy_(np2th(weights["cls"]))
+            self.transformer.encoder.encoder_norm.weight.copy_(np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                ntok_new = posemb_new.size(1)
+
+                if self.classifier == "token":
+                    posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                    ntok_new -= 1
+                else:
+                    posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
+
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                print('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid, zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                posemb = np.concatenate([posemb_tok, posemb_grid], axis=1)
+                self.transformer.embeddings.position_embeddings.copy_(np2th(posemb))
+
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(np2th(weights["conv_root/kernel"], conv=True))
+                gn_weight = np2th(weights["gn_root/scale"]).view(-1)
+                gn_bias = np2th(weights["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(weights, n_block=bname, n_unit=uname)
+
+
+class XFGCrossAttnRec(nn.Module):
+    def __init__(self, config, num_classes=200, zero_head=False):
+        super(XFGCrossAttnRec, self).__init__()
+        self.num_classes = num_classes
+        self.zero_head = zero_head
+        self.classifier = config.classifier
+
+        self.dropout = nn.Dropout(config.dropout)
+
+        self.encoder = Encoder(config.encoder)
+        self.decoder = Decoder(config.decoder)
+
+        self.rec_encoder = Encoder(config.rec_encoder)
+
+        self.img_token_proj = nn.Linear(325, config.max_len)
+
+        self.transformer = Transformer(config)
+        # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
+        self.head = nn.Linear(config.hidden_size, num_classes)
+
+        self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+
+    def forward(self, img, txt_tokens):
+        img_tokens, _ = self.transformer(img)
+        img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_token_proj(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
+
+        # txt_tokens = txt_tokens.permute(0, 2, 1)
+        # txt_tokens = self.txt_token_proj(txt_tokens)
+        # txt_tokens = txt_tokens.permute(0, 2, 1)
+
+        img_tokens = self.img_pos_embedding(img_tokens)
+        txt_tokens = self.txt_pos_embedding(txt_tokens)
+
+        txt_tokens, _ = self.encoder(txt_tokens)
+        img_tokens, attn_weights = self.decoder(img_tokens, txt_tokens)
+
+        logits = self.head(img_tokens[:, 0])
+        rec_txt_tokens, _ = self.rec_encoder(img_tokens)
+        return logits, attn_weights, rec_txt_tokens
+
+    def load_from(self, weights):
+        with torch.no_grad():
+            self.transformer.embeddings.patch_embeddings.weight.copy_(np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(np2th(weights["embedding/bias"]))
+            self.transformer.embeddings.cls_token.copy_(np2th(weights["cls"]))
+            self.transformer.encoder.encoder_norm.weight.copy_(np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                ntok_new = posemb_new.size(1)
+
+                if self.classifier == "token":
+                    posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                    ntok_new -= 1
+                else:
+                    posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
+
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                print('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid, zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                posemb = np.concatenate([posemb_tok, posemb_grid], axis=1)
+                self.transformer.embeddings.position_embeddings.copy_(np2th(posemb))
+
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(np2th(weights["conv_root/kernel"], conv=True))
+                gn_weight = np2th(weights["gn_root/scale"]).view(-1)
+                gn_bias = np2th(weights["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(weights, n_block=bname, n_unit=uname)
+
+
+class XFGConcatEncodedDR(nn.Module):
+    def __init__(self, config, num_classes=200, zero_head=False):
+        super(XFGConcatEncodedDR, self).__init__()
+        self.num_classes = num_classes
+        self.zero_head = zero_head
+        self.classifier = config.classifier
+
+        self.dropout = nn.Dropout(config.dropout)
+        self.transformer = Transformer(config)
+
+        self.encoder = EncoderConcat(config)
+
+        self.img_encoder = Encoder(config.encoder)
+        self.txt_encoder = Encoder(config.encoder)
+
+        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+
+        self.head = nn.Linear(config.hidden_size, num_classes)
+
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len - 1 + config.max_len - 1, config.hidden_size, dropout=config.dropout)
+
+        self.shared_cls = config.transformer.shared_cls
+
+        if not self.shared_cls:
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+
+    def forward(self, img, txt_tokens):
+        img_tokens, _ = self.transformer(img)
+
+        img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_token_proj(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
+
+        txt_tokens = txt_tokens[:, 1:, :]
+
+        img_tokens, _ = self.img_encoder(img_tokens)
+        txt_tokens, _ = self.txt_encoder(txt_tokens)
+
+        tokens = torch.cat([txt_tokens, img_tokens], dim=1)
+        tokens = self.pos_embedding(tokens) + tokens
+
+        if not self.shared_cls:
+            cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        else:
+            cls_token = img_tokens[:, 0, :]
+
+        tokens = torch.cat([cls_token, tokens], dim=1)
+
+        tokens, attn_weights = self.encoder(tokens)
+
+        logits = self.head(tokens[:, 0])
+        return logits, attn_weights
+
+    def load_from(self, weights):
+        with torch.no_grad():
+            self.transformer.embeddings.patch_embeddings.weight.copy_(np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(np2th(weights["embedding/bias"]))
+            self.transformer.embeddings.cls_token.copy_(np2th(weights["cls"]))
+            self.transformer.encoder.encoder_norm.weight.copy_(np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                ntok_new = posemb_new.size(1)
+
+                if self.classifier == "token":
+                    posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                    ntok_new -= 1
+                else:
+                    posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
+
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                print('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid, zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                posemb = np.concatenate([posemb_tok, posemb_grid], axis=1)
+                self.transformer.embeddings.position_embeddings.copy_(np2th(posemb))
+
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(np2th(weights["conv_root/kernel"], conv=True))
+                gn_weight = np2th(weights["gn_root/scale"]).view(-1)
+                gn_bias = np2th(weights["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(weights, n_block=bname, n_unit=uname)
+
+
+class XFGConcatEncodedRec(nn.Module):
+    def __init__(self, config, num_classes=200, zero_head=False):
+        super(XFGConcatEncodedRec, self).__init__()
+        self.num_classes = num_classes
+        self.zero_head = zero_head
+        self.classifier = config.classifier
+
+        self.dropout = nn.Dropout(config.dropout)
+        self.transformer = Transformer(config)
+
+        self.encoder = EncoderConcat(config)
+
+        self.img_encoder = Encoder(config.encoder)
+        self.txt_encoder = Encoder(config.encoder)
+
+        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+
+        self.head = nn.Linear(config.hidden_size, num_classes)
+
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len - 1 + config.max_len - 1, config.hidden_size, dropout=config.dropout)
+
+        self.shared_cls = config.transformer.shared_cls
+
+        if not self.shared_cls:
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+
+    def forward(self, img, txt_tokens):
+        img_tokens, _ = self.transformer(img)
+
+        img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_token_proj(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
+
+        txt_tokens = txt_tokens[:, 1:, :]
+
+        img_tokens, _ = self.img_encoder(img_tokens)
+        txt_tokens, _ = self.txt_encoder(txt_tokens)
+
+        tokens = torch.cat([txt_tokens, img_tokens], dim=1)
+        tokens = self.pos_embedding(tokens) + tokens
+
+        if not self.shared_cls:
+            cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        else:
+            cls_token = img_tokens[:, 0, :]
+
+        tokens = torch.cat([cls_token, tokens], dim=1)
+
+        tokens, attn_weights = self.encoder(tokens)
+
+        logits = self.head(tokens[:, 0])
+        return logits, attn_weights
+
+    def load_from(self, weights):
+        with torch.no_grad():
+            self.transformer.embeddings.patch_embeddings.weight.copy_(np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(np2th(weights["embedding/bias"]))
+            self.transformer.embeddings.cls_token.copy_(np2th(weights["cls"]))
+            self.transformer.encoder.encoder_norm.weight.copy_(np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                ntok_new = posemb_new.size(1)
+
+                if self.classifier == "token":
+                    posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                    ntok_new -= 1
+                else:
+                    posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
+
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                print('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid, zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                posemb = np.concatenate([posemb_tok, posemb_grid], axis=1)
+                self.transformer.embeddings.position_embeddings.copy_(np2th(posemb))
+
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(np2th(weights["conv_root/kernel"], conv=True))
+                gn_weight = np2th(weights["gn_root/scale"]).view(-1)
+                gn_bias = np2th(weights["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(weights, n_block=bname, n_unit=uname)
+
+
+
+class XFGConcatDR(nn.Module):
+    def __init__(self, config, num_classes=200, zero_head=False):
+        super(XFGConcatDR, self).__init__()
+        self.num_classes = num_classes
+        self.zero_head = zero_head
+        self.classifier = config.classifier
+
+        self.dropout = nn.Dropout(config.dropout)
+        self.transformer = Transformer(config)
+
+        self.encoder = EncoderConcat(config)
+
+        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+
+        self.head = nn.Linear(config.hidden_size, num_classes)
+
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len - 1 + config.max_len - 1, config.hidden_size, dropout=config.dropout)
+
+        self.shared_cls = config.transformer.shared_cls
+
+        if not self.shared_cls:
+            self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+
+
+    def forward(self, img, txt_tokens):
+        img_tokens, _ = self.transformer(img)
+
+        img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_token_proj(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
+
+        txt_tokens = txt_tokens[:, 1:, :]
+
+        tokens = torch.cat([txt_tokens, img_tokens], dim=1)
+        tokens = self.pos_embedding(tokens) + tokens
+
+        if not self.shared_cls:
+            cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        else:
+            cls_token = img_tokens[:, 0, :]
+
+        tokens = torch.cat([cls_token, tokens], dim=1)
+
+        tokens, attn_weights = self.encoder(tokens)
+
+        logits = self.head(tokens[:, 0])
+        return logits, attn_weights
+
+    def load_from(self, weights):
+        with torch.no_grad():
+            self.transformer.embeddings.patch_embeddings.weight.copy_(np2th(weights["embedding/kernel"], conv=True))
+            self.transformer.embeddings.patch_embeddings.bias.copy_(np2th(weights["embedding/bias"]))
+            self.transformer.embeddings.cls_token.copy_(np2th(weights["cls"]))
+            self.transformer.encoder.encoder_norm.weight.copy_(np2th(weights["Transformer/encoder_norm/scale"]))
+            self.transformer.encoder.encoder_norm.bias.copy_(np2th(weights["Transformer/encoder_norm/bias"]))
+
+            posemb = np2th(weights["Transformer/posembed_input/pos_embedding"])
+            posemb_new = self.transformer.embeddings.position_embeddings
+            if posemb.size() == posemb_new.size():
+                self.transformer.embeddings.position_embeddings.copy_(posemb)
+            else:
+                ntok_new = posemb_new.size(1)
+
+                if self.classifier == "token":
+                    posemb_tok, posemb_grid = posemb[:, :1], posemb[0, 1:]
+                    ntok_new -= 1
+                else:
+                    posemb_tok, posemb_grid = posemb[:, :0], posemb[0]
+
+                gs_old = int(np.sqrt(len(posemb_grid)))
+                gs_new = int(np.sqrt(ntok_new))
+                print('load_pretrained: grid-size from %s to %s' % (gs_old, gs_new))
+                posemb_grid = posemb_grid.reshape(gs_old, gs_old, -1)
+
+                zoom = (gs_new / gs_old, gs_new / gs_old, 1)
+                posemb_grid = ndimage.zoom(posemb_grid, zoom, order=1)
+                posemb_grid = posemb_grid.reshape(1, gs_new * gs_new, -1)
+                posemb = np.concatenate([posemb_tok, posemb_grid], axis=1)
+                self.transformer.embeddings.position_embeddings.copy_(np2th(posemb))
+
+            for bname, block in self.transformer.encoder.named_children():
+                for uname, unit in block.named_children():
+                    unit.load_from(weights, n_block=uname)
+
+            if self.transformer.embeddings.hybrid:
+                self.transformer.embeddings.hybrid_model.root.conv.weight.copy_(np2th(weights["conv_root/kernel"], conv=True))
+                gn_weight = np2th(weights["gn_root/scale"]).view(-1)
+                gn_bias = np2th(weights["gn_root/bias"]).view(-1)
+                self.transformer.embeddings.hybrid_model.root.gn.weight.copy_(gn_weight)
+                self.transformer.embeddings.hybrid_model.root.gn.bias.copy_(gn_bias)
+
+                for bname, block in self.transformer.embeddings.hybrid_model.body.named_children():
+                    for uname, unit in block.named_children():
+                        unit.load_from(weights, n_block=bname, n_unit=uname)

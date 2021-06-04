@@ -1,0 +1,6 @@
+# @package _global_
+model: xfg_concat_dr
+transformer:
+  num_layers_fusion: 1
+  attention_dropout_rate: 0.0
+  shared_cls: false

@@ -1,0 +1,16 @@
+# @package _global_
+model: xfg_concat_encoded_dr
+transformer:
+  num_layers_fusion: 1
+  attention_dropout_rate: 0.0
+  shared_cls: false
+
+
+encoder:
+  dropout: 0.1
+  hidden_size: 768
+  transformer:
+    mlp_dim: 3072
+    num_heads: 12
+    num_layers: 1
+    attention_dropout_rate: 0.0

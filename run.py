@@ -9,8 +9,12 @@ import pytorch_lightning as pl
 from pl_model.vit import LitViT
 from pl_model.xfg_concat import LitXFGConcat
 from pl_model.xfg_cross import LitXFGCrossAttn
+from pl_model.xfg_cross_rec import LitXFGCrossAttnRec
 from pl_model.xfg_concat_backbone import LitXFGConcatWithBackbone
 from pl_model.xfg_cross_backbone import LitXFGCrossWithBackbone
+from pl_model.xfg_cross_dr import LitXFGCrossAttnDR
+from pl_model.xfg_concat_dr import LitXFGConcatDR
+from pl_model.xfg_concat_encoded_dr import LitXFGConcatEncodedDR
 from pl_model.resnet import LitResNet
 
 
@@ -19,6 +23,14 @@ def get_model(config):
         return LitViT(config)
     elif config.model == "xfg_cross":
         return LitXFGCrossAttn(config)
+    elif config.model == "xfg_cross_dr":
+        return LitXFGCrossAttnDR(config)
+    elif config.model == "xfg_concat_dr":
+        return LitXFGConcatDR(config)
+    elif config.model == "xfg_concat_encoded_dr":
+        return LitXFGConcatEncodedDR(config)
+    elif config.model == "xfg_cross_rec":
+        return LitXFGCrossAttnRec(config)
     elif config.model == "xfg_concat":
         return LitXFGConcat(config)
     elif config.model == "xfg_cross_backbone":

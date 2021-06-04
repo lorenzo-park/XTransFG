@@ -12,14 +12,14 @@ import pytorch_lightning as pl
 import numpy as np
 
 from dataset.cub import CUB200
-from model.xfg import XFGCrossAttn
+from model.xfg import XFGCrossAttnRec
 from util import WarmupLinearSchedule
 
 
-class LitXFGCrossAttn(pl.LightningModule):
+class LitXFGCrossAttnRec(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = XFGCrossAttn(config)
+        self.model = XFGCrossAttnRec(config)
         self.model.load_from(np.load(config.pretrained_dir))
         self.config = config
 
@@ -34,9 +34,9 @@ class LitXFGCrossAttn(pl.LightningModule):
     def training_step(self, batch, _):
         inputs, txt, targets = batch
 
-        outputs, _ = self.model(inputs, txt.squeeze(1))
+        outputs, _, rec_txt_tokens = self.model(inputs, txt.squeeze(1))
 
-        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
+        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1)) + self.config.lambda_rec * F.mse_loss(rec_txt_tokens, txt.squeeze(1))
         train_acc = self.train_accuracy(torch.argmax(outputs, dim=-1), targets)
 
         self.log("train_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
@@ -51,7 +51,7 @@ class LitXFGCrossAttn(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         inputs, txt, targets = batch
-        outputs, attn_weights = self.model(inputs, txt.squeeze(1))
+        outputs, attn_weights, _ = self.model(inputs, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -73,7 +73,7 @@ class LitXFGCrossAttn(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         inputs, txt, targets = batch
-        outputs, attn_weights = self.model(inputs, txt.squeeze(1))
+        outputs, _, _ = self.model(inputs, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         test_acc = self.test_accuracy(torch.argmax(outputs, dim=-1), targets)

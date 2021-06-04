@@ -12,14 +12,14 @@ import pytorch_lightning as pl
 import numpy as np
 
 from dataset.cub import CUB200
-from model.xfg import XFGCrossAttn
+from model.xfg import XFGCrossAttnDR
 from util import WarmupLinearSchedule
 
 
-class LitXFGCrossAttn(pl.LightningModule):
+class LitXFGCrossAttnDR(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
-        self.model = XFGCrossAttn(config)
+        self.model = XFGCrossAttnDR(config)
         self.model.load_from(np.load(config.pretrained_dir))
         self.config = config
 
