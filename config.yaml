@@ -26,3 +26,4 @@ patience: 10
 pretrained_dir: /home/lorenzo-lab/project/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
 root: "/home/lorenzo-lab/project/xfg/data"
 warmup: false
+project: xfg

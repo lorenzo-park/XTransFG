@@ -46,7 +46,7 @@ def run(config):
     if config.logger:
         from pytorch_lightning.loggers import WandbLogger
         logger = WandbLogger(
-            project="xfg",
+            project=config.project,
             name=config.model,
             config=config,
         )
