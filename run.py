@@ -15,6 +15,7 @@ from pl_model.xfg_cross_backbone import LitXFGCrossWithBackbone
 from pl_model.xfg_cross_dr import LitXFGCrossAttnDR
 from pl_model.xfg_concat_dr import LitXFGConcatDR
 from pl_model.xfg_concat_encoded_dr import LitXFGConcatEncodedDR
+from pl_model.xfg_nocross_dr import LitXFGNoCrossAttnDR
 from pl_model.resnet import LitResNet
 
 
@@ -23,6 +24,8 @@ def get_model(config):
         return LitViT(config)
     elif config.model == "xfg_cross":
         return LitXFGCrossAttn(config)
+    elif config.model == "xfg_nocross_dr":
+        return LitXFGNoCrossAttnDR(config)
     elif config.model == "xfg_cross_dr":
         return LitXFGCrossAttnDR(config)
     elif config.model == "xfg_concat_dr":
