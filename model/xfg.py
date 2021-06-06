@@ -420,14 +420,15 @@ class XFGCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len-1)
+        self.img_token_proj = nn.Linear(325, config.proj_dim)
+        self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
-        self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+        self.img_pos_embedding = TrainablePositionalEncoding(config.proj_dim+1, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.proj_dim+1, config.hidden_size, dropout=config.dropout)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
@@ -440,9 +441,9 @@ class XFGCrossAttnDR(nn.Module):
         cls_token = self.cls_token.expand(img.shape[0], -1, -1)
         img_tokens = torch.cat([cls_token, img_tokens], dim=1)
 
-        # txt_tokens = txt_tokens.permute(0, 2, 1)
-        # txt_tokens = self.txt_token_proj(txt_tokens)
-        # txt_tokens = txt_tokens.permute(0, 2, 1)
+        txt_tokens = txt_tokens.permute(0, 2, 1)
+        txt_tokens = self.txt_token_proj(txt_tokens)
+        txt_tokens = txt_tokens.permute(0, 2, 1)
 
         img_tokens = self.img_pos_embedding(img_tokens)
         txt_tokens = self.txt_pos_embedding(txt_tokens)
@@ -513,13 +514,13 @@ class XFGNoCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         # self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len-1)
+        self.img_token_proj = nn.Linear(325, config.proj_dim)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+        self.img_pos_embedding = TrainablePositionalEncoding(config.proj_dim+1, config.hidden_size, dropout=config.dropout)
         # self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
@@ -608,14 +609,16 @@ class XFGCrossAttnRec(nn.Module):
 
         self.rec_encoder = Encoder(config.rec_encoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len-1)
+        self.img_token_proj = nn.Linear(325, config.proj_dim)
+        self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
+        self.txt_token_proj_inv = nn.Linear(config.proj_dim, config.max_len)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
-        self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+        self.img_pos_embedding = TrainablePositionalEncoding(config.proj_dim+1, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.proj_dim+1, config.hidden_size, dropout=config.dropout)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
@@ -624,6 +627,10 @@ class XFGCrossAttnRec(nn.Module):
         img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
+
+        txt_tokens = txt_tokens.permute(0, 2, 1)
+        txt_tokens = self.txt_token_proj(txt_tokens)
+        txt_tokens = txt_tokens.permute(0, 2, 1)
 
         cls_token = self.cls_token.expand(img.shape[0], -1, -1)
         img_tokens = torch.cat([cls_token, img_tokens], dim=1)
@@ -639,7 +646,12 @@ class XFGCrossAttnRec(nn.Module):
         img_tokens, attn_weights = self.decoder(img_tokens, txt_tokens)
 
         logits = self.head(img_tokens[:, 0])
+
+        img_tokens = img_tokens[:, 1:].permute(0, 2, 1)
+        img_tokens = self.txt_token_proj_inv(img_tokens)
+        img_tokens = img_tokens.permute(0, 2, 1)
         rec_txt_tokens, _ = self.rec_encoder(img_tokens)
+
         return logits, attn_weights, rec_txt_tokens
 
     def load_from(self, weights):

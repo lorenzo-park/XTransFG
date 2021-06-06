@@ -32,4 +32,5 @@ decoder:
     num_layers: 1
     attention_dropout_rate: 0.0
 
-lambda_rec: 0.1
+lambda_rec: 1.0
+proj_dim: 10

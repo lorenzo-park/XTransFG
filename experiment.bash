@@ -42,23 +42,50 @@
 # python run.py model=xfg_cross_rec encoder.transformer.num_layers=8 decoder.transformer.num_layers=8
 
 
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
 
 
-python run.py model=vit gpus=1 seed=None project="xfg-final"
-python run.py model=vit gpus=1 seed=None project="xfg-final"
-python run.py model=vit gpus=1 seed=None project="xfg-final"
-python run.py model=vit gpus=1 seed=None project="xfg-final"
-python run.py model=vit gpus=1 seed=None project="xfg-final"
+python run.py model=vit project="xfg" seed=42
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
 
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
+python run.py model=vit project="xfg" seed=43
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
 
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg-final"
+python run.py model=vit project="xfg" seed=44
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
+
+python run.py model=vit project="xfg" seed=45
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
+
+python run.py model=vit project="xfg" seed=46
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
+
+# python run.py model=vit gpus=1 seed=None project="xfg"
+# python run.py model=vit gpus=1 seed=None project="xfg"
+# python run.py model=vit gpus=1 seed=None project="xfg"
+# python run.py model=vit gpus=1 seed=None project="xfg"
+
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"

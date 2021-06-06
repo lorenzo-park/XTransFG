@@ -20,3 +20,5 @@ decoder:
     num_heads: 12
     num_layers: 1
     attention_dropout_rate: 0.0
+
+proj_dim: 10
