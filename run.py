@@ -61,11 +61,11 @@ def run(config):
     pl.seed_everything(config.seed)
 
     early_stop_callback = EarlyStopping(
-        monitor='val_acc_epoch',
+        monitor='val_loss',
         min_delta=0.00,
         patience=config.patience,
         verbose=False,
-        mode='max'
+        mode='min'
     )
     if config.gpus > 1:
         trainer = pl.Trainer(

@@ -420,7 +420,7 @@ class XFGCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len)
+        self.img_token_proj = nn.Linear(325, config.max_len-1)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
@@ -429,11 +429,16 @@ class XFGCrossAttnDR(nn.Module):
         self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
         self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
 
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+
     def forward(self, img, txt_tokens):
         img_tokens, _ = self.transformer(img)
         img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
+
+        cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        img_tokens = torch.cat([cls_token, img_tokens], dim=1)
 
         # txt_tokens = txt_tokens.permute(0, 2, 1)
         # txt_tokens = self.txt_token_proj(txt_tokens)
@@ -508,7 +513,7 @@ class XFGNoCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         # self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len)
+        self.img_token_proj = nn.Linear(325, config.max_len-1)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
@@ -516,6 +521,8 @@ class XFGNoCrossAttnDR(nn.Module):
 
         self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
         # self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
+
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
     def forward(self, img, txt_tokens):
         img_tokens, _ = self.transformer(img)
@@ -527,10 +534,13 @@ class XFGNoCrossAttnDR(nn.Module):
         # txt_tokens = self.txt_token_proj(txt_tokens)
         # txt_tokens = txt_tokens.permute(0, 2, 1)
 
+        cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        img_tokens = torch.cat([cls_token, img_tokens], dim=1)
+
         img_tokens = self.img_pos_embedding(img_tokens)
         # txt_tokens = self.txt_pos_embedding(txt_tokens)
 
-        txt_tokens, attn_weights = self.encoder(img_tokens)
+        img_tokens, attn_weights = self.encoder(img_tokens)
         # img_tokens, attn_weights = self.decoder(img_tokens, txt_tokens)
 
         logits = self.head(img_tokens[:, 0])
@@ -598,7 +608,7 @@ class XFGCrossAttnRec(nn.Module):
 
         self.rec_encoder = Encoder(config.rec_encoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len)
+        self.img_token_proj = nn.Linear(325, config.max_len-1)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
@@ -607,11 +617,16 @@ class XFGCrossAttnRec(nn.Module):
         self.img_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
         self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len, config.hidden_size, dropout=config.dropout)
 
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+
     def forward(self, img, txt_tokens):
         img_tokens, _ = self.transformer(img)
         img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
+
+        cls_token = self.cls_token.expand(img.shape[0], -1, -1)
+        img_tokens = torch.cat([cls_token, img_tokens], dim=1)
 
         # txt_tokens = txt_tokens.permute(0, 2, 1)
         # txt_tokens = self.txt_token_proj(txt_tokens)
