@@ -51,9 +51,9 @@ class LitXFGCrossAttnRec(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         inputs, txt, targets = batch
-        outputs, attn_weights, _ = self.model(inputs, txt.squeeze(1))
+        outputs, attn_weights, rec_txt_tokens = self.model(inputs, txt.squeeze(1))
 
-        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
+        loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1)) + self.config.lambda_rec * F.mse_loss(rec_txt_tokens, txt.squeeze(1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
 
         self.log("val_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
