@@ -22,8 +22,8 @@ momentum: 0.9
 epoch: 100
 gpus: 1
 logger: true
-patience: 20
-pretrained_dir: /root/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
-root: "/root/xfg/data"
+patience: 10
+pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_32.npz
+root: /home/lorenzo/xfg/data
 warmup: false
 project: xfg
