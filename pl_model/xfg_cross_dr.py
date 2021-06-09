@@ -51,7 +51,7 @@ class LitXFGCrossAttnDR(pl.LightningModule):
 
     def validation_step(self, batch, batch_idx):
         inputs, txt, targets = batch
-        outputs, attn_weights = self.model(inputs, txt.squeeze(1))
+        outputs, _ = self.model(inputs, txt.squeeze(1))
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
         val_acc = self.val_accuracy(torch.argmax(outputs, dim=-1), targets)
@@ -59,15 +59,9 @@ class LitXFGCrossAttnDR(pl.LightningModule):
         self.log("val_acc", val_acc, on_step=False, on_epoch=True, sync_dist=True)
         self.log("val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
 
-        if self.plot:
-            images = attn_weights[-1][0].squeeze(0).unsqueeze(1).repeat(1, 3, 1, 1)
-            self.attn_weights = torchvision.utils.make_grid(images)
-            self.plot = False
         return loss
 
     def validation_epoch_end(self, outs):
-        self.logger.experiment.log({"attn_weights": [wandb.Image(self.attn_weights)]})
-        self.plot = True
         self.log("val_acc_epoch", self.val_accuracy.compute(),
                 prog_bar=True, logger=True, sync_dist=True)
 
@@ -83,9 +77,14 @@ class LitXFGCrossAttnDR(pl.LightningModule):
         self.log("test_loss", loss, on_step=False, on_epoch=True, logger=True,
                 sync_dist=True)
 
+        if self.plot:
+            images = attn_weights[-1][0].squeeze(0).unsqueeze(1).repeat(1, 3, 1, 1)
+            self.attn_weights = torchvision.utils.make_grid(images)
+            self.plot = False
         return loss
 
     def test_epoch_end(self, outs):
+        self.logger.experiment.log({"attn_weights": [wandb.Image(self.attn_weights)]})
         test_acc = self.test_accuracy.compute()
         self.log("test_acc_epoch", test_acc, logger=True, sync_dist=True)
 

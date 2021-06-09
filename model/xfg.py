@@ -160,11 +160,11 @@ class XFGCrossAttn(nn.Module):
         self.decoder = Decoder(config.decoder)
 
         self.transformer = Transformer(config)
-        self.txt_token_proj = nn.Linear(config.max_len, 325)
+        self.txt_token_proj = nn.Linear(config.max_len, config.visual_token_len)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.img_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
-        self.txt_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
+        self.img_pos_embedding = TrainablePositionalEncoding(config.visual_token_len, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.visual_token_len, config.hidden_size, dropout=config.dropout)
 
     def forward(self, img, txt_tokens):
         img_tokens, _ = self.transformer(img)
@@ -261,7 +261,7 @@ class XFGConcat(nn.Module):
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.pos_embedding = TrainablePositionalEncoding(config.max_len+325, config.hidden_size, dropout=config.dropout)
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len+config.visual_token_len, config.hidden_size, dropout=config.dropout)
 
         self.shared_cls = config.transformer.shared_cls
 
@@ -352,7 +352,7 @@ class XFGConcatWithBackbone(nn.Module):
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.pos_embedding = TrainablePositionalEncoding(config.max_len-1+324, config.hidden_size, dropout=config.dropout)
+        self.pos_embedding = TrainablePositionalEncoding(config.max_len-1+config.visual_token_len-1, config.hidden_size, dropout=config.dropout)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
@@ -384,11 +384,11 @@ class XFGCrossAttnWithBackbone(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.txt_token_proj = nn.Linear(config.max_len, 325)
+        self.txt_token_proj = nn.Linear(config.max_len, config.visual_token_len)
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.img_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
-        self.txt_pos_embedding = TrainablePositionalEncoding(325, config.hidden_size, dropout=config.dropout)
+        self.img_pos_embedding = TrainablePositionalEncoding(config.visual_token_len, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.visual_token_len, config.hidden_size, dropout=config.dropout)
 
     def forward(self, img_tokens, txt_tokens):
         # img_tokens = img_tokens[:, 1:, :]
@@ -420,7 +420,7 @@ class XFGCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.proj_dim)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
         self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
 
         self.transformer = Transformer(config)
@@ -514,7 +514,7 @@ class XFGNoCrossAttnDR(nn.Module):
         self.encoder = Encoder(config.encoder)
         # self.decoder = Decoder(config.decoder)
 
-        self.img_token_proj = nn.Linear(325, config.proj_dim)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
 
         self.transformer = Transformer(config)
         # self.txt_token_proj = nn.Linear(config.max_len, config.max_len)
@@ -609,7 +609,7 @@ class XFGCrossAttnRec(nn.Module):
 
         self.rec_encoder = Encoder(config.rec_encoder)
 
-        self.img_token_proj = nn.Linear(325, config.proj_dim)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
         self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
         self.txt_token_proj_inv = nn.Linear(config.proj_dim, config.max_len)
 
@@ -717,7 +717,7 @@ class XFGConcatEncodedDR(nn.Module):
         self.img_encoder = Encoder(config.encoder)
         self.txt_encoder = Encoder(config.encoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.max_len - 1)
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
@@ -818,7 +818,7 @@ class XFGConcatEncodedRec(nn.Module):
         self.img_encoder = Encoder(config.encoder)
         self.txt_encoder = Encoder(config.encoder)
 
-        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.max_len - 1)
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
@@ -917,7 +917,7 @@ class XFGConcatDR(nn.Module):
 
         self.encoder = EncoderConcat(config)
 
-        self.img_token_proj = nn.Linear(325, config.max_len - 1)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.max_len - 1)
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
