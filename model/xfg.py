@@ -904,7 +904,6 @@ class XFGConcatEncodedRec(nn.Module):
                         unit.load_from(weights, n_block=bname, n_unit=uname)
 
 
-
 class XFGConcatDR(nn.Module):
     def __init__(self, config, num_classes=200, zero_head=False):
         super(XFGConcatDR, self).__init__()

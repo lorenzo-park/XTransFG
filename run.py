@@ -17,6 +17,7 @@ from pl_model.xfg_concat_dr import LitXFGConcatDR
 from pl_model.xfg_concat_encoded_dr import LitXFGConcatEncodedDR
 from pl_model.xfg_nocross_dr import LitXFGNoCrossAttnDR
 from pl_model.resnet import LitResNet
+from pl_model.roberta_cls import LitRobBERTaClassification
 
 
 def get_model(config):
@@ -42,6 +43,8 @@ def get_model(config):
         return LitXFGConcatWithBackbone(config)
     elif config.model == "resnet":
         return LitResNet(config)
+    elif config.model == "roberta_cls":
+        return LitRobBERTaClassification(config)
 
 
 @hydra.main(config_name="config")

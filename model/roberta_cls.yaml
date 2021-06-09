@@ -1,0 +1,7 @@
+# @package _global_
+model: roberta_cls
+cls_head:
+  hidden_size: 768
+  hidden_dropout_prob: 0.1
+  num_labels: 200
+pretrained_path: "/home/lorenzo/xfg/pretrained/roberta"
