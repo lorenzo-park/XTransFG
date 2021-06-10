@@ -7,44 +7,32 @@ import torch
 import pytorch_lightning as pl
 
 from pl_model.vit import LitViT
-from pl_model.xfg_concat import LitXFGConcat
-from pl_model.xfg_cross import LitXFGCrossAttn
 from pl_model.xfg_cross_rec import LitXFGCrossAttnRec
-from pl_model.xfg_concat_backbone import LitXFGConcatWithBackbone
-from pl_model.xfg_cross_backbone import LitXFGCrossWithBackbone
 from pl_model.xfg_cross_dr import LitXFGCrossAttnDR
 from pl_model.xfg_concat_dr import LitXFGConcatDR
-from pl_model.xfg_concat_encoded_dr import LitXFGConcatEncodedDR
 from pl_model.xfg_nocross_dr import LitXFGNoCrossAttnDR
 from pl_model.resnet import LitResNet
 from pl_model.roberta_cls import LitRobBERTaClassification
+from pl_model.vit_roberta_cls import LitViTRobBERTa
 
 
 def get_model(config):
     if config.model == "vit":
         return LitViT(config)
-    elif config.model == "xfg_cross":
-        return LitXFGCrossAttn(config)
     elif config.model == "xfg_nocross_dr":
         return LitXFGNoCrossAttnDR(config)
     elif config.model == "xfg_cross_dr":
         return LitXFGCrossAttnDR(config)
     elif config.model == "xfg_concat_dr":
         return LitXFGConcatDR(config)
-    elif config.model == "xfg_concat_encoded_dr":
-        return LitXFGConcatEncodedDR(config)
     elif config.model == "xfg_cross_rec":
         return LitXFGCrossAttnRec(config)
-    elif config.model == "xfg_concat":
-        return LitXFGConcat(config)
-    elif config.model == "xfg_cross_backbone":
-        return LitXFGCrossWithBackbone(config)
-    elif config.model == "xfg_concat_backbone":
-        return LitXFGConcatWithBackbone(config)
     elif config.model == "resnet":
         return LitResNet(config)
     elif config.model == "roberta_cls":
         return LitRobBERTaClassification(config)
+    elif config.model == "vit_roberta_cls":
+        return LitViTRobBERTa(config)
 
 
 @hydra.main(config_name="config")
