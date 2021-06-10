@@ -80,6 +80,23 @@ class TrainablePositionalEncoding(nn.Module):
         return embeddings
 
 
+class EncoderConcat(nn.Module):
+    def __init__(self, config):
+        super(EncoderConcat, self).__init__()
+        self.layer = nn.ModuleList()
+        for _ in range(config.transformer.num_layers_fusion):
+            layer = Block(config)
+            self.layer.append(copy.deepcopy(layer))
+        self.encoder_norm = nn.LayerNorm(config.hidden_size, eps=1e-6)
+
+    def forward(self, hidden_states):
+        attn_weights = []
+        for layer in self.layer:
+            hidden_states, weights = layer(hidden_states)
+            attn_weights.append(weights)
+        return self.encoder_norm(hidden_states), attn_weights
+
+
 class Encoder(nn.Module):
     def __init__(self, config):
         super(Encoder, self).__init__()
@@ -147,6 +164,7 @@ class XBlock(nn.Module):
         return x, weights
 
 
+<<<<<<< HEAD
 class XFGCrossAttn(nn.Module):
     def __init__(self, config, num_classes=200, zero_head=False):
         super(XFGCrossAttn, self).__init__()
@@ -408,6 +426,8 @@ class XFGCrossAttnWithBackbone(nn.Module):
         return logits, attn_weights
 
 
+=======
+>>>>>>> origin/proj-32
 class XFGCrossAttnDR(nn.Module):
     def __init__(self, config, num_classes=200, zero_head=False):
         super(XFGCrossAttnDR, self).__init__()
@@ -607,7 +627,7 @@ class XFGCrossAttnRec(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        self.rec_encoder = Encoder(config.rec_encoder)
+        # self.rec_encoder = Encoder(config.rec_encoder)
 
         self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
         self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
@@ -649,8 +669,7 @@ class XFGCrossAttnRec(nn.Module):
 
         img_tokens = img_tokens[:, 1:].permute(0, 2, 1)
         img_tokens = self.txt_token_proj_inv(img_tokens)
-        img_tokens = img_tokens.permute(0, 2, 1)
-        rec_txt_tokens, _ = self.rec_encoder(img_tokens)
+        rec_txt_tokens = img_tokens.permute(0, 2, 1)
 
         return logits, attn_weights, rec_txt_tokens
 
