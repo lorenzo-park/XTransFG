@@ -4,3 +4,5 @@ transformer:
   num_layers_fusion: 1
   attention_dropout_rate: 0.0
   shared_cls: false
+
+proj_dim: 20

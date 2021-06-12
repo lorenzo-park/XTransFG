@@ -286,7 +286,6 @@ class XFGNoCrossAttnDR(nn.Module):
         img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
-
         # txt_tokens = txt_tokens.permute(0, 2, 1)
         # txt_tokens = self.txt_token_proj(txt_tokens)
         # txt_tokens = txt_tokens.permute(0, 2, 1)
@@ -472,11 +471,12 @@ class XFGConcatEncodedDR(nn.Module):
         self.img_encoder = Encoder(config.encoder)
         self.txt_encoder = Encoder(config.encoder)
 
-        self.img_token_proj = nn.Linear(config.visual_token_len, config.max_len - 1)
+        self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
+        self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim)
 
         self.head = nn.Linear(config.hidden_size, num_classes)
 
-        self.pos_embedding = TrainablePositionalEncoding(config.max_len - 1 + config.max_len - 1, config.hidden_size, dropout=config.dropout)
+        self.pos_embedding = TrainablePositionalEncoding(config.proj_dim + config.proj_dim, config.hidden_size, dropout=config.dropout)
 
         self.shared_cls = config.transformer.shared_cls
 
@@ -490,7 +490,9 @@ class XFGConcatEncodedDR(nn.Module):
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
 
-        txt_tokens = txt_tokens[:, 1:, :]
+        txt_tokens = txt_tokens.permute(0, 2, 1)
+        txt_tokens = self.txt_token_proj(txt_tokens)
+        txt_tokens = txt_tokens.permute(0, 2, 1)
 
         img_tokens, _ = self.img_encoder(img_tokens)
         txt_tokens, _ = self.txt_encoder(txt_tokens)

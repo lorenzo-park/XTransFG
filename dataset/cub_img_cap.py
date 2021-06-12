@@ -27,7 +27,9 @@ class ImgCapCUB200(datasets.VisionDataset):
     if self.target_transform is not None and target is not None:
       target = self.target_transform(target)
 
-    return img, input_id, mask, target
+    txt = np.load(path.replace(".jpg", ".txt.npy"))
+
+    return img, txt, input_id, mask, target
 
   def __len__(self) -> int:
     return len(self.data)

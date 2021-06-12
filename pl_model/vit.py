@@ -15,7 +15,8 @@ import numpy as np
 
 from dataset.cub import CUB200
 from model.vit import VisionTransformer
-from util import WarmupLinearSchedule
+from utils.lr_schedule import WarmupCosineSchedule
+from utils.autoaug import AutoAugImageNetPolicy
 
 
 class LitViT(pl.LightningModule):
@@ -93,14 +94,14 @@ class LitViT(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.config.warmup:
-            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
-            scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
+            optimizer = torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum, weight_decay=1e-5)
+            scheduler = WarmupCosineSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
             return (
                 [optimizer],
                 [scheduler]
             )
         else:
-            return torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum)
+            return torch.optim.SGD(self.model.parameters(), lr=self.config.lr, momentum=self.config.momentum, weight_decay=1e-5)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.config.batch_size,
@@ -119,6 +120,7 @@ class LitViT(pl.LightningModule):
             transforms.Resize((600, 600), InterpolationMode.BILINEAR),
             transforms.RandomCrop((448, 448)),
             transforms.RandomHorizontalFlip(),
+            # AutoAugImageNetPolicy(),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])

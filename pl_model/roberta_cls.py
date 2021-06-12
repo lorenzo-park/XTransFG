@@ -16,7 +16,7 @@ import pytorch_lightning as pl
 import numpy as np
 
 from dataset.cub_caption import CapCUB200
-from util import WarmupLinearSchedule
+from utils.lr_schedule import WarmupCosineSchedule
 from model.roberta_cls import RobertaClassificationHead
 
 
@@ -92,8 +92,8 @@ class LitRobBERTaClassification(pl.LightningModule):
             optimizer = torch.optim.SGD([
                 {"params": self.embedding.parameters()},
                 {"params": self.cls_head.parameters()},
-            ], lr=self.config.lr, momentum=self.config.momentum)
-            scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
+            ], lr=self.config.lr, momentum=self.config.momentum, weight_decay=1e-5)
+            scheduler = WarmupCosineSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
             return (
                 [optimizer],
                 [scheduler]
@@ -102,7 +102,7 @@ class LitRobBERTaClassification(pl.LightningModule):
             return torch.optim.SGD([
                 {"params": self.embedding.parameters()},
                 {"params": self.cls_head.parameters()},
-            ], lr=self.config.lr, momentum=self.config.momentum)
+            ], lr=self.config.lr, momentum=self.config.momentum, weight_decay=1e-5)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.config.batch_size,

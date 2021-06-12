@@ -1,91 +1,86 @@
-# python run.py model=vit gpus=1
+# Run 0 for ablation study
+python run.py model=vit project="xfg-final" seed=42 epoch=1
+python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 epoch=1
+python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 epoch=1
+python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 epoch=1
+python run.py model=roberta_cls project="xfg-final" seed=42 lr=1e-3 epoch=1
 
-# python run.py model=xfg_cross encoder.transformer.num_layers=1 decoder.transformer.num_layers=1
-# python run.py model=xfg_cross_backbone encoder.transformer.num_layers=1 decoder.transformer.num_layers=1
-# python run.py model=xfg_concat transformer.num_layers_fusion=1
-# python run.py model=xfg_concat_backbone transformer.num_layers_fusion=1
+python run.py model=vit_roberta_cls project="xfg-final" seed=42 epoch=1
+python run.py model=xfg_concat_encoded_dr encoder.transformer.num_layers=1 project="xfg-final" seed=42 epoch=1
+# rm -rf outputs
 
-# python run.py model=xfg_cross encoder.transformer.num_layers=4 decoder.transformer.num_layers=4
-# python run.py model=xfg_cross_backbone encoder.transformer.num_layers=4 decoder.transformer.num_layers=4
-# python run.py model=xfg_concat transformer.num_layers_fusion=4
-# python run.py model=xfg_concat_backbone transformer.num_layers_fusion=4
+# Run 1 for ablation study
+# python run.py model=vit project="xfg-final" seed=43
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43
+# python run.py model=roberta_cls project="xfg-final" seed=43 lr=1e-3
+# python run.py model=vit_roberta_cls project="xfg-final" seed=43
+# rm -rf outputs
 
-# python run.py model=xfg_cross encoder.transformer.num_layers=6 decoder.transformer.num_layers=6
-# python run.py model=xfg_cross_backbone encoder.transformer.num_layers=6 decoder.transformer.num_layers=6
-# python run.py model=xfg_concat transformer.num_layers_fusion=6
-# python run.py model=xfg_concat_backbone transformer.num_layers_fusion=6
+# Run 2 for ablation study
+# python run.py model=vit project="xfg-final" seed=44
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44
+# python run.py model=roberta_cls project="xfg-final" seed=44 lr=1e-3
+# python run.py model=vit_roberta_cls project="xfg-final" seed=44
+# rm -rf outputs
 
-# python run.py model=xfg_cross encoder.transformer.num_layers=12 decoder.transformer.num_layers=4
-# python run.py model=xfg_concat transformer.num_layers_fusion=8
-# python run.py model=xfg_concat transformer.num_layers_fusion=12
-# python run.py model=xfg_cross encoder.transformer.num_layers=3 decoder.transformer.num_layers=3
-# python run.py model=xfg_cross encoder.transformer.num_layers=5 decoder.transformer.num_layers=5
+# Run 3 for ablation study
+# python run.py model=vit project="xfg-final" seed=45
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45
+# python run.py model=roberta_cls project="xfg-final" seed=45 lr=1e-3
+# python run.py model=vit_roberta_cls project="xfg-final" seed=45
+# rm -rf outputs
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1
-# python run.py model=xfg_concat_dr transformer.num_layers_fusion=1
+# Run 4 for ablation study
+# python run.py model=vit project="xfg-final" seed=46
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46
+# python run.py model=roberta_cls project="xfg-final" seed=45 lr=1e-3
+# python run.py model=vit_roberta_cls project="xfg-final" seed=45 lr=1e-3
+# rm -rf outputs
 
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=2 decoder.transformer.num_layers=2
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=2 decoder.transformer.num_layers=2
+# # Run 1 for ablation study
+# python run.py model=vit project="xfg-final" seed=43 patience=0 epoch=112 warmup=true
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43 patience=0 epoch=46
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43 patience=0 epoch=34
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=43 patience=0 epoch=34
+# rm -rf outputs
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=3 decoder.transformer.num_layers=3
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=3 decoder.transformer.num_layers=3
+# # Run 2 for ablation study
+# python run.py model=vit project="xfg-final" seed=44 patience=0 epoch=93
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44 patience=0 epoch=48
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44 patience=0 epoch=34
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=44 patience=0 epoch=32
+# rm -rf outputs
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=4 decoder.transformer.num_layers=4
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=4 decoder.transformer.num_layers=4
+# # Run 3 for ablation study
+# python run.py model=vit project="xfg-final" seed=45 patience=0 epoch=90
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45 patience=0 epoch=47
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45 patience=0 epoch=30
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=45 patience=0 epoch=32
+# rm -rf outputs
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=4 decoder.transformer.num_layers=6
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=4 decoder.transformer.num_layers=6
+# # Run 4 for ablation study
+# python run.py model=vit project="xfg-final" seed=46 patience=0 epoch=93
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46 patience=0 epoch=44
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46 patience=0 epoch=31
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=46 patience=0 epoch=30
+# rm -rf outputs
 
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=8 decoder.transformer.num_layers=8
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=8 decoder.transformer.num_layers=8
-
-
-# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-
-
-python run.py model=vit project="xfg" seed=42
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=42
-
-python run.py model=vit project="xfg" seed=43
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=43
-
-python run.py model=vit project="xfg" seed=44
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=44
-
-python run.py model=vit project="xfg" seed=45
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=45
-
-python run.py model=vit project="xfg" seed=46
-python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
-python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
-python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg" seed=46
-
-# python run.py model=vit gpus=1 seed=None project="xfg"
-# python run.py model=vit gpus=1 seed=None project="xfg"
-# python run.py model=vit gpus=1 seed=None project="xfg"
-# python run.py model=vit gpus=1 seed=None project="xfg"
-
-# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
-# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 seed=None project="xfg"
+# # Run 5 for ablation study
+# python run.py model=vit project="xfg-final" seed=42 patience=0 epoch=94
+# python run.py model=xfg_nocross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 patience=0 epoch=47
+# python run.py model=xfg_cross_dr encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 patience=0 epoch=33
+# python run.py model=xfg_cross_rec encoder.transformer.num_layers=1 decoder.transformer.num_layers=1 project="xfg-final" seed=42 patience=0 epoch=33

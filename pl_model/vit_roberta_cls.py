@@ -16,18 +16,21 @@ import pytorch_lightning as pl
 import numpy as np
 
 from dataset.cub_img_cap import ImgCapCUB200
-from util import WarmupLinearSchedule
+from utils.lr_schedule import WarmupCosineSchedule
+from utils.autoaug import AutoAugImageNetPolicy
 from model.vit_roberta_cls import ConcatClassificationHead
 from model.vit import VisionTransformer
-
+from model.xfg import Encoder
 
 class LitViTRobBERTa(pl.LightningModule):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        roberta = RobertaForMaskedLM.from_pretrained(config.pretrained_path)
         self.model = VisionTransformer(config).transformer
-        self.embedding = roberta.roberta
+
+        self.img_encoder = Encoder(config.encoder)
+        self.txt_encoder = Encoder(config.encoder)
+
         self.cls_head = ConcatClassificationHead(config.cls_head)
 
         self.init_dataset()
@@ -38,10 +41,11 @@ class LitViTRobBERTa(pl.LightningModule):
 
 
     def training_step(self, batch, batch_idx):
-        inputs_imgs, inputs, masks, targets = batch
+        inputs_imgs, txt, _, _, targets = batch
 
         outputs_imgs, _ = self.model(inputs_imgs)
-        outputs_txts = self.embedding(inputs, attention_mask=masks)[0]
+        outputs_imgs, _ = self.img_encoder(outputs_imgs)
+        outputs_txts, _ = self.txt_encoder(txt.squeeze(1))
         outputs = self.cls_head(outputs_imgs, outputs_txts)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
@@ -58,10 +62,11 @@ class LitViTRobBERTa(pl.LightningModule):
                 prog_bar=True, logger=True, sync_dist=True)
 
     def validation_step(self, batch, batch_idx):
-        inputs_imgs, inputs, masks, targets = batch
+        inputs_imgs, txt, _, _, targets = batch
 
         outputs_imgs, _ = self.model(inputs_imgs)
-        outputs_txts = self.embedding(inputs, attention_mask=masks)[0]
+        outputs_imgs, _ = self.img_encoder(outputs_imgs)
+        outputs_txts, _ = self.txt_encoder(txt.squeeze(1))
         outputs = self.cls_head(outputs_imgs, outputs_txts)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
@@ -77,10 +82,11 @@ class LitViTRobBERTa(pl.LightningModule):
                 prog_bar=True, logger=True, sync_dist=True)
 
     def test_step(self, batch, batch_idx):
-        inputs_imgs, inputs, masks, targets = batch
+        inputs_imgs, txt, _, _, targets = batch
 
         outputs_imgs, _ = self.model(inputs_imgs)
-        outputs_txts = self.embedding(inputs, attention_mask=masks)[0]
+        outputs_imgs, _ = self.img_encoder(outputs_imgs)
+        outputs_txts, _ = self.txt_encoder(txt.squeeze(1))
         outputs = self.cls_head(outputs_imgs, outputs_txts)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))
@@ -100,19 +106,23 @@ class LitViTRobBERTa(pl.LightningModule):
     def configure_optimizers(self):
         if self.config.warmup:
             optimizer = torch.optim.SGD([
-                {"params": self.embedding.parameters()},
+                {"params": self.model.parameters()},
                 {"params": self.cls_head.parameters()},
-            ], lr=self.config.lr, momentum=self.config.momentum)
-            scheduler = WarmupLinearSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
+                {"params": self.img_encoder.parameters()},
+                {"params": self.txt_encoder.parameters()},
+            ], lr=self.config.lr,  momentum=self.config.momentum, weight_decay=1e-5)
+            scheduler = WarmupCosineSchedule(optimizer, warmup_steps=500, t_total=374*self.config.epoch)
             return (
                 [optimizer],
                 [scheduler]
             )
         else:
             return torch.optim.SGD([
-                {"params": self.embedding.parameters()},
+                {"params": self.model.parameters()},
                 {"params": self.cls_head.parameters()},
-            ], lr=self.config.lr, momentum=self.config.momentum)
+                {"params": self.img_encoder.parameters()},
+                {"params": self.txt_encoder.parameters()},
+            ], lr=self.config.lr, momentum=self.config.momentum, weight_decay=1e-5)
 
     def train_dataloader(self):
         return DataLoader(self.train_set, batch_size=self.config.batch_size,
@@ -131,6 +141,7 @@ class LitViTRobBERTa(pl.LightningModule):
             transforms.Resize((600, 600), InterpolationMode.BILINEAR),
             transforms.RandomCrop((448, 448)),
             transforms.RandomHorizontalFlip(),
+            # AutoAugImageNetPolicy(),
             transforms.ToTensor(),
             transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
         ])
@@ -142,4 +153,4 @@ class LitViTRobBERTa(pl.LightningModule):
         ])
 
         self.train_set = ImgCapCUB200(root=self.config.root, tokenizer_path=self.config.pretrained_path, transform=train_transform, train=True)
-        self.test_set = ImgCapCUB200(root=self.config.root, tokenizer_path=self.config.pretrained_path, transform=train_transform, train=False)
+        self.test_set = ImgCapCUB200(root=self.config.root, tokenizer_path=self.config.pretrained_path, transform=test_transform, train=False)

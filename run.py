@@ -9,11 +9,11 @@ import pytorch_lightning as pl
 from pl_model.vit import LitViT
 from pl_model.xfg_cross_rec import LitXFGCrossAttnRec
 from pl_model.xfg_cross_dr import LitXFGCrossAttnDR
-from pl_model.xfg_concat_dr import LitXFGConcatDR
 from pl_model.xfg_nocross_dr import LitXFGNoCrossAttnDR
 from pl_model.resnet import LitResNet
 from pl_model.roberta_cls import LitRobBERTaClassification
 from pl_model.vit_roberta_cls import LitViTRobBERTa
+from pl_model.xfg_concat_encoded_dr import LitXFGConcatEncodedDR
 
 
 def get_model(config):
@@ -23,12 +23,14 @@ def get_model(config):
         return LitXFGNoCrossAttnDR(config)
     elif config.model == "xfg_cross_dr":
         return LitXFGCrossAttnDR(config)
-    elif config.model == "xfg_concat_dr":
-        return LitXFGConcatDR(config)
+    elif config.model == "xfg_concat_encoded_dr":
+        return LitXFGConcatEncodedDR(config)
     elif config.model == "xfg_cross_rec":
         return LitXFGCrossAttnRec(config)
     elif config.model == "resnet":
         return LitResNet(config)
+    elif config.model == "xfg_concat_encoded_dr":
+        return LitXFG
     elif config.model == "roberta_cls":
         return LitRobBERTaClassification(config)
     elif config.model == "vit_roberta_cls":
@@ -51,16 +53,19 @@ def run(config):
 
     pl.seed_everything(config.seed)
 
-    early_stop_callback = EarlyStopping(
-        monitor='val_loss',
-        min_delta=0.00,
-        patience=config.patience,
-        verbose=False,
-        mode='min'
-    )
+    callbacks = []
+    if config.patience > 0:
+        early_stop_callback = EarlyStopping(
+            monitor='val_loss',
+            min_delta=0.00,
+            patience=config.patience,
+            verbose=False,
+            mode='min'
+        )
+        callbacks.append(early_stop_callback)
     if config.gpus > 1:
         trainer = pl.Trainer(
-            callbacks=[early_stop_callback],
+            callbacks=callbacks,
             precision=16,
             deterministic=True,
             check_val_every_n_epoch=1,
@@ -73,7 +78,7 @@ def run(config):
         )
     else:
         trainer = pl.Trainer(
-            callbacks=[early_stop_callback],
+            callbacks=callbacks,
             precision=16,
             deterministic=True,
             check_val_every_n_epoch=1,

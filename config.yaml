@@ -2,9 +2,9 @@ defaults:
   - model: xfg_concat
 
 patch_size: 16
-visual_token_len: 362
-split: overlap
-slide_step: 24
+visual_token_len: 785
+split: non-overlap
+slide_step: 12
 hidden_size: 768
 dropout: 0.1
 max_len: 49
@@ -17,13 +17,13 @@ transformer:
   mlp_dim: 3072
   num_heads: 12
   num_layers: 12
-lr: 5e-4
+lr: 3e-2
 seed: 42
 momentum: 0.9
 epoch: 300
 gpus: 2
 logger: true
-patience: 10
+patience: 20
 pretrained_dir: /home/lorenzo/xfg/pretrained/vit/imagenet21k_ViT-B_16.npz
 root: /home/lorenzo/xfg/data
 warmup: false
