@@ -20,7 +20,7 @@ from utils.lr_schedule import WarmupCosineSchedule
 from utils.autoaug import AutoAugImageNetPolicy
 from model.vit_roberta_cls import ConcatClassificationHead
 from model.vit import VisionTransformer
-from model.xfg import Encoder
+from model.xfg import Encoder, TrainablePositionalEncoding
 
 class LitViTRobBERTa(pl.LightningModule):
     def __init__(self, config):
@@ -28,8 +28,14 @@ class LitViTRobBERTa(pl.LightningModule):
         self.config = config
         self.model = VisionTransformer(config).transformer
 
+        self.img_pos_embedding = TrainablePositionalEncoding(config.visual_token_len+1, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.max_len+1, config.hidden_size, dropout=config.dropout)
+
         self.img_encoder = Encoder(config.encoder)
         self.txt_encoder = Encoder(config.encoder)
+
+        self.cls_token_img = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
+        self.cls_token_txt = nn.Parameter(torch.zeros(1, 1, config.hidden_size))
 
         self.cls_head = ConcatClassificationHead(config.cls_head)
 
@@ -43,9 +49,18 @@ class LitViTRobBERTa(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         inputs_imgs, txt, _, _, targets = batch
 
+        cls_token_img = self.cls_token_img.expand(inputs_imgs.shape[0], -1, -1)
+        cls_token_txt = self.cls_token_txt.expand(txt.shape[0], -1, -1)
+
         outputs_imgs, _ = self.model(inputs_imgs)
+        outputs_imgs = torch.cat([cls_token_img, outputs_imgs], dim=1)
+        outputs_imgs = self.img_pos_embedding(outputs_imgs)
         outputs_imgs, _ = self.img_encoder(outputs_imgs)
-        outputs_txts, _ = self.txt_encoder(txt.squeeze(1))
+
+        outputs_txts = torch.cat([cls_token_txt, txt.squeeze(1)], dim=1)
+        outputs_txts = self.txt_pos_embedding(outputs_txts)
+        outputs_txts, _ = self.txt_encoder(outputs_txts)
+
         outputs = self.cls_head(outputs_imgs, outputs_txts)
 
         loss = F.cross_entropy(outputs.view(-1, self.config.num_classes), targets.view(-1))

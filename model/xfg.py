@@ -468,6 +468,9 @@ class XFGConcatEncodedDR(nn.Module):
 
         self.encoder = EncoderConcat(config)
 
+        self.img_pos_embedding = TrainablePositionalEncoding(config.proj_dim, config.hidden_size, dropout=config.dropout)
+        self.txt_pos_embedding = TrainablePositionalEncoding(config.proj_dim, config.hidden_size, dropout=config.dropout)
+
         self.img_encoder = Encoder(config.encoder)
         self.txt_encoder = Encoder(config.encoder)
 
@@ -489,16 +492,18 @@ class XFGConcatEncodedDR(nn.Module):
         img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.img_token_proj(img_tokens)
         img_tokens = img_tokens.permute(0, 2, 1)
+        img_tokens = self.img_pos_embedding(img_tokens)
 
         txt_tokens = txt_tokens.permute(0, 2, 1)
         txt_tokens = self.txt_token_proj(txt_tokens)
         txt_tokens = txt_tokens.permute(0, 2, 1)
+        txt_tokens = self.img_pos_embedding(txt_tokens)
 
         img_tokens, _ = self.img_encoder(img_tokens)
         txt_tokens, _ = self.txt_encoder(txt_tokens)
 
         tokens = torch.cat([txt_tokens, img_tokens], dim=1)
-        tokens = self.pos_embedding(tokens) + tokens
+        tokens = self.pos_embedding(tokens)
 
         if not self.shared_cls:
             cls_token = self.cls_token.expand(img.shape[0], -1, -1)
