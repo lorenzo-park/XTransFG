@@ -362,7 +362,7 @@ class XFGCrossAttnRec(nn.Module):
         self.encoder = Encoder(config.encoder)
         self.decoder = Decoder(config.decoder)
 
-        # self.rec_encoder = Encoder(config.rec_encoder)
+        self.rec_encoder = Encoder(config.rec_encoder)
 
         self.img_token_proj = nn.Linear(config.visual_token_len, config.proj_dim)
         self.txt_token_proj = nn.Linear(config.max_len, config.proj_dim+1)
@@ -402,7 +402,8 @@ class XFGCrossAttnRec(nn.Module):
 
         logits = self.head(img_tokens[:, 0])
 
-        img_tokens = img_tokens[:, 1:].permute(0, 2, 1)
+        img_tokens, _ = self.rec_encoder(img_tokens[:, 1:])
+        img_tokens = img_tokens.permute(0, 2, 1)
         img_tokens = self.txt_token_proj_inv(img_tokens)
         rec_txt_tokens = img_tokens.permute(0, 2, 1)
 
