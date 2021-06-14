@@ -21,4 +21,4 @@ decoder:
     num_layers: 1
     attention_dropout_rate: 0.0
 
-proj_dim: 20
+proj_dim: 300

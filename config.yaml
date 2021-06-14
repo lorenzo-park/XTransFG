@@ -23,7 +23,7 @@ momentum: 0.9
 epoch: 300
 gpus: 3
 logger: true
-patience: 20
+patience: 10
 pretrained_dir: ${project_root}/pretrained/vit/imagenet21k_ViT-B_16.npz
 root: ${project_root}/data
 project_root: /root/xfg

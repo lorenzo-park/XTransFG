@@ -33,4 +33,4 @@ decoder:
     attention_dropout_rate: 0.0
 
 lambda_rec: 1.0
-proj_dim: 20
+proj_dim: 300
